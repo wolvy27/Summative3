@@ -1,27 +1,36 @@
 package com.example.summative3.ui
 
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.summative3.navigation.AppNavigation
 import com.example.summative3.navigation.Screen
 import com.example.summative3.viewmodel.EventViewModel
+import com.example.summative3.viewmodel.MapViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(viewModel: EventViewModel) {
+fun MainScreen(
+    eventViewModel: EventViewModel,
+    mapViewModel: MapViewModel
+) {
     val navController = rememberNavController()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-
-    val items = listOf(Screen.AddEvent, Screen.EventList)
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route?.substringBefore("?")?.substringBefore("/")
+    val items = listOf(Screen.AddEvent, Screen.EventList, Screen.EventMap)
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -30,9 +39,15 @@ fun MainScreen(viewModel: EventViewModel) {
                 items.forEach { screen ->
                     NavigationDrawerItem(
                         label = { Text(screen.name) },
-                        selected = false,
+                        selected = currentRoute == screen.name,
                         onClick = {
-                            navController.navigate(screen.name)
+                            navController.navigate(screen.name) {
+                                popUpTo(navController.graph.startDestinationId) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
                             scope.launch { drawerState.close() }
                         }
                     )
@@ -58,15 +73,23 @@ fun MainScreen(viewModel: EventViewModel) {
                     items.forEach { screen ->
                         NavigationBarItem(
                             icon = {
-                                if (screen == Screen.AddEvent)
-                                    Icon(Icons.Default.Add, contentDescription = null)
-                                else
-                                    Icon(Icons.Default.List, contentDescription = null)
+                                when (screen) {
+                                    Screen.AddEvent -> Icon(Icons.Default.Add, contentDescription = null)
+                                    Screen.EventList -> Icon(Icons.Default.List, contentDescription = null)
+                                    Screen.EventMap -> Icon(Icons.Default.Place, contentDescription = null)
+                                }
                             },
                             label = { Text(screen.name) },
-                            selected = false,
+                            selected = currentRoute == screen.name,
                             onClick = {
-                                navController.navigate(screen.name)
+                                // Navigate to clean route without parameters for bottom bar items
+                                navController.navigate(screen.name) {
+                                    popUpTo(navController.graph.startDestinationId) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
                             }
                         )
                     }
@@ -75,7 +98,8 @@ fun MainScreen(viewModel: EventViewModel) {
         ) { innerPadding ->
             AppNavigation(
                 navController = navController,
-                viewModel = viewModel,
+                eventViewModel = eventViewModel,
+                mapViewModel = mapViewModel,
                 modifier = Modifier.padding(innerPadding)
             )
         }

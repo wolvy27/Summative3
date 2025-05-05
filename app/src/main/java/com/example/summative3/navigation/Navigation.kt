@@ -2,5 +2,6 @@ package com.example.summative3.navigation
 
 enum class Screen {
     AddEvent,
-    EventList
+    EventList,
+    EventMap
 }

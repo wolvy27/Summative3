@@ -3,21 +3,43 @@ package com.example.summative3.uiScreens
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import com.example.summative3.data.Event
 import com.example.summative3.viewmodel.EventViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.util.*
 
 @Composable
 fun AddEventScreen(
     viewModel: EventViewModel,
-    modifier: Modifier = Modifier
+    navController: NavHostController,
+    modifier: Modifier = Modifier,
+    eventId: Int? = null
 ) {
-    var eventState by remember { mutableStateOf(EventFormState()) }
+    // Load existing event if in update mode
+    val existingEvent by produceState<Event?>(initialValue = null) {
+        if (eventId != null) {
+            value = withContext(Dispatchers.IO) {
+                viewModel.getEventById(eventId)
+            }
+        }
+    }
+
+    var eventState by remember {
+        mutableStateOf(
+            existingEvent?.toFormState() ?: EventFormState()
+        )
+    }
+
+    // Rest of your composable remains the same...
     val context = LocalContext.current
     val calendar = remember { Calendar.getInstance() }
 
@@ -30,6 +52,7 @@ fun AddEventScreen(
             state = eventState,
             onNameChange = { eventState = eventState.copy(name = it) },
             onDetailsChange = { eventState = eventState.copy(details = it) },
+            onLocationChange = { eventState = eventState.copy(location = it) },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -54,10 +77,15 @@ fun AddEventScreen(
         SaveEventButton(
             eventState = eventState,
             onSave = {
-                viewModel.addEvent(eventState.toEvent())
-                eventState = EventFormState() // Reset form
+                if (existingEvent != null) {
+                    viewModel.updateEvent(eventState.toEvent(existingEvent!!.id))
+                } else {
+                    viewModel.addEvent(eventState.toEvent())
+                }
+                navController.popBackStack()
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            isUpdate = existingEvent != null
         )
     }
 }
@@ -67,6 +95,7 @@ private fun EventInputFields(
     state: EventFormState,
     onNameChange: (String) -> Unit,
     onDetailsChange: (String) -> Unit,
+    onLocationChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
@@ -83,6 +112,15 @@ private fun EventInputFields(
             value = state.details,
             onValueChange = onDetailsChange,
             label = { Text("Event Details") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = state.location,
+            onValueChange = onLocationChange,
+            label = { Text("Event Location") },
             modifier = Modifier.fillMaxWidth()
         )
     }
@@ -137,32 +175,47 @@ private fun DateTimeSelectionSection(
 private fun SaveEventButton(
     eventState: EventFormState,
     onSave: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isUpdate: Boolean = false
 ) {
     Button(
         onClick = onSave,
         enabled = eventState.isValid(),
         modifier = modifier
     ) {
-        Text("Save Event")
+        Text(if (isUpdate) "Update Event" else "Save Event")
     }
 }
 
-private data class EventFormState(
+data class EventFormState(
     val name: String = "",
     val details: String = "",
+    val location: String = "",
     val date: String = "",
     val time: String = ""
 ) {
     fun isValid(): Boolean = name.isNotBlank() &&
             details.isNotBlank() &&
+            location.isNotBlank() &&
             date.isNotBlank() &&
             time.isNotBlank()
 
-    fun toEvent(): Event = Event(
+    fun toEvent(id: Int = 0): Event = Event(
+        id = id,
         name = name,
         details = details,
         date = date,
-        time = time
+        time = time,
+        location = location
+    )
+}
+
+fun Event.toFormState(): EventFormState {
+    return EventFormState(
+        name = this.name,
+        details = this.details,
+        location = this.location,
+        date = this.date,
+        time = this.time
     )
 }

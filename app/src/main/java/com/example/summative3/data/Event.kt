@@ -10,5 +10,8 @@ data class Event(
     val name: String,
     val details: String,
     val date: String,
-    val time: String
+    val time: String,
+    val location: String = "", // Address of the location
+    val latitude: Double = 0.0, // Latitude coordinate
+    val longitude: Double = 0.0 // Longitude coordinate
 )
