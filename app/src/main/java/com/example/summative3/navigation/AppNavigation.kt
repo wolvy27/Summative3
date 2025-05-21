@@ -8,6 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.summative3.uiScreens.AddEventScreen
+import com.example.summative3.uiScreens.CalculatorScreen
 import com.example.summative3.uiScreens.EventListScreen
 import com.example.summative3.uiScreens.MapScreen
 import com.example.summative3.viewmodel.EventViewModel
@@ -62,6 +63,10 @@ fun AppNavigation(
             MapScreen(
                 viewModel = mapViewModel
             )
+        }
+
+        composable(Screen.Calculator.name) {
+            CalculatorScreen(navController)
         }
     }
 }

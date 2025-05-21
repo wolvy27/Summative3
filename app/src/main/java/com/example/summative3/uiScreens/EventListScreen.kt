@@ -1,5 +1,6 @@
 package com.example.summative3.uiScreens
 
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.summative3.data.Event
@@ -23,20 +25,32 @@ fun EventListScreen(
 ) {
     val eventList = viewModel.eventList.collectAsState(initial = emptyList())
 
-    LazyColumn(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onDoubleTap = {
+                        navController.navigate(Screen.Calculator.name)
+                    }
+                )
+            }
     ) {
-        items(eventList.value) { event ->
-            EventCard(
-                event = event,
-                onEventDone = { viewModel.deleteEvent(event) },
-                onUpdateClick = {
-                    navController.navigate("${Screen.AddEvent.name}/${event.id}")
-                }
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            items(eventList.value) { event ->
+                EventCard(
+                    event = event,
+                    onEventDone = { viewModel.deleteEvent(event) },
+                    onUpdateClick = {
+                        navController.navigate("${Screen.AddEvent.name}/${event.id}")
+                    }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
         }
     }
 }

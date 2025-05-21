@@ -3,6 +3,7 @@ package com.example.summative3.ui
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.*
@@ -30,7 +31,7 @@ fun MainScreen(
     val scope = rememberCoroutineScope()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route?.substringBefore("?")?.substringBefore("/")
-    val items = listOf(Screen.AddEvent, Screen.EventList, Screen.EventMap)
+    val items = listOf(Screen.AddEvent, Screen.EventList, Screen.EventMap, Screen.Calculator)
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -77,12 +78,13 @@ fun MainScreen(
                                     Screen.AddEvent -> Icon(Icons.Default.Add, contentDescription = null)
                                     Screen.EventList -> Icon(Icons.Default.List, contentDescription = null)
                                     Screen.EventMap -> Icon(Icons.Default.Place, contentDescription = null)
+                                    Screen.Calculator -> Icon(Icons.Default.Calculate, contentDescription = null
+                                    )
                                 }
                             },
                             label = { Text(screen.name) },
                             selected = currentRoute == screen.name,
                             onClick = {
-                                // Navigate to clean route without parameters for bottom bar items
                                 navController.navigate(screen.name) {
                                     popUpTo(navController.graph.startDestinationId) {
                                         saveState = true
